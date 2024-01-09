@@ -1,0 +1,4 @@
+﻿.section .text
+.global _start
+_start:
+	li t0, 5
