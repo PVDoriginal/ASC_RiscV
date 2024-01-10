@@ -8,6 +8,7 @@ namespace ASC_RiscV_P {
     internal class Executor {
 
         static Dictionary<byte, List<int>> LabelPositions = new();
+        static Dictionary<byte, int> VariablePositions = new();
         static int[] RegisterValues = new int[32];
         static float[] FRegisterValues = new float[32];
 
@@ -22,10 +23,8 @@ namespace ASC_RiscV_P {
             Console.WriteLine("\n");
 
             RecordLabels(bits);
-
-            Console.WriteLine(RegisterValues[5]);
-            Execute(LabelPositions[0][0], bits); // execute from main
-            Console.WriteLine(RegisterValues[5]);
+            Execute(LabelPositions[0][0], bits); // execute main
+            Console.WriteLine(Convert.ToChar(RegisterValues[6])); 
         }
         
         static void Execute(int curr, bool[] bits) {
@@ -43,16 +42,62 @@ namespace ASC_RiscV_P {
                     continue;
                 }
 
-                if (MainClass.Instructions[s] == "li"){
+                if (MainClass.Instructions[s] == "li") {
                     bool rtype = bits[curr++];
-                    byte reg = GetByte(ref curr, bits);
+                    int reg = GetRegister(curr, bits); curr += 5;
 
                     if (!rtype) 
                         RegisterValues[reg] = GetConstant(ref curr, bits);
                     else 
                         FRegisterValues[reg] = GetConstantFloat(ref curr, bits);
+                    continue;
                 }
 
+                if (MainClass.Instructions[s] == "la") {
+                    bool rtype = bits[curr++];
+                    int reg = GetRegister(curr, bits); curr += 5;
+
+                    byte variable = GetByte(ref curr, bits);
+                    if (!rtype)
+                        RegisterValues[reg] = VariablePositions[variable] / 8;
+                    else
+                        FRegisterValues[reg] = VariablePositions[variable] / 8;
+                    continue;
+                }
+
+                if (MainClass.Instructions[s] == "add") {
+
+                    bool rtype = bits[curr++];
+                    int reg1 = GetRegister(curr, bits); curr += 5;
+                    curr++;
+                    int reg2 = GetRegister(curr, bits); curr += 5;
+                    curr++;
+                    int reg3 = GetRegister(curr, bits); curr += 5;
+
+                    if (!rtype)
+                        RegisterValues[reg1] = RegisterValues[reg2] + RegisterValues[reg3];
+                    else
+                        FRegisterValues[reg1] = FRegisterValues[reg2] + FRegisterValues[reg3];
+                    continue;
+                }
+
+                if (MainClass.Instructions[s] == "lb") {
+
+                    bool rtype = bits[curr++];
+                    int reg_dest = GetRegister(curr, bits); curr += 5;
+
+                    int constant = GetConstant(ref curr, bits);
+                    curr++;
+                    int reg_op = GetRegister(curr, bits); curr += 5;
+
+                    int address = constant + RegisterValues[reg_op];
+
+                    if(!rtype)
+                        RegisterValues[reg_dest] = GetByte(address * 8, bits);
+                    else
+                        FRegisterValues[reg_dest] = GetByte(address * 8, bits);
+                    continue;
+                }
             }
 
         }
@@ -68,8 +113,40 @@ namespace ASC_RiscV_P {
 
                 if (curr == bits.Length) break;
 
-                if (MainClass.Instructions[s] == "label")
-                    RegisterLabel(GetByte(ref curr, bits), curr);
+                if (MainClass.Instructions[s] == "label") {
+                    byte label = GetByte(ref curr, bits);
+                    RegisterLabel(label, curr);
+                    continue;
+                }
+
+                if (MainClass.Instructions[s] == "var") {
+                    byte varId = GetByte(ref curr, bits);
+                    byte type = GetByte(ref curr, bits);
+
+                    VariablePositions[varId] = curr;
+
+                    switch (type) {
+
+                        //asciz 
+                        case 1:
+                            byte b = 1;
+                            while(b != 0)
+                                b = GetByte(ref curr, bits);    
+
+                            break;
+
+                    }
+                    continue;
+                }
+
+                bool foundInstruction = false;
+                foreach (string instruction in MainClass.Codes.Keys)
+                    if (instruction != "var" && instruction != "label" && MainClass.Instructions[s] == instruction) {
+                        curr += MainClass.InstructionSizes[instruction];
+                        foundInstruction = true; break; 
+                    }
+                if (foundInstruction) continue;
+                break;
             }
 
         }
@@ -80,6 +157,21 @@ namespace ASC_RiscV_P {
                 LabelPositions[label] = new List<int>();
 
             LabelPositions[label].Add(pos);
+        }
+
+        static bool IsInstruction(string t, int curr, bool[] bits){
+            string s = "";
+            while(s.Length < MainClass.Codes[t].Length && curr < bits.Length)
+                s += bits[curr++] ? "1" : "0";
+            return s == MainClass.Codes[t] && curr < bits.Length;
+        }
+
+        static byte GetRegister(int curr, bool[] bits){
+            byte b = 0, a = 16;
+            for (int i = curr; i < curr + 5; i++, a >>= 1)
+                if (bits[i])
+                    b += a;
+            return b;
         }
 
         static byte GetByte(int curr, bool[] bits){

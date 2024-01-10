@@ -8,6 +8,7 @@ namespace ASC_RiscV_P {
     internal class Assembler {
 
         static Dictionary<string, byte> Labels = new();
+        static Dictionary<string, byte> Variables = new();
         public static void Assemble() {
 
             Labels["_start"] = (byte)0;
@@ -23,17 +24,23 @@ namespace ASC_RiscV_P {
 
                 if (s[curr] == 0) break;
 
+                if(IsDataSectionStart(curr, s)){
+                    JumpToNextLine(ref curr, s);
+                    AssembleData(ref curr, s, ref bits);
+                    continue;
+                }
+
                 if (s[curr] == '.' || s[curr] == '#') {
                     JumpToNextLine(ref curr, s);
                     continue;
                 }
 
-                if (s[curr] == ' ' || s[curr] == '\n') {
+                if (IsWhitespace(s[curr])) {
                     JumpPastWhitespace(ref curr, s);
                     continue;
                 }
 
-                if(IsLabel(curr, s)){
+                if (IsLabel(curr, s)) {
                     WriteCode(MainClass.Codes["label"], ref bits);
                     WriteCode(GetLabelCode(GetLabel(curr, s)), ref bits);
                     JumpToNextWord(ref curr, s);
@@ -47,6 +54,7 @@ namespace ASC_RiscV_P {
                     string reg = GetWord(ref curr, s, true);
                     WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
                     WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
                     string constant = GetWord(ref curr, s, true);
 
                     if (reg[0] != 'f') 
@@ -55,6 +63,55 @@ namespace ASC_RiscV_P {
                         WriteCode(Convert.ToSingle(constant), ref bits);
                     
                     continue;
+                }
+
+                if(IsInstruction("la", curr, s)) {
+                    WriteCode(MainClass.Codes["la"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string variable = GetWord(ref curr, s, true);
+                    WriteCode(GetVariableCode(variable), ref bits);
+
+                    continue;
+                }
+
+                if (IsInstruction("add", curr, s)) {
+                    WriteCode(MainClass.Codes["add"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+
+                if(IsInstruction("lb", curr, s)) {
+                    WriteCode(MainClass.Codes["lb"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string constant = GetWord(ref curr, s, true);
+                    WriteCode(Convert.ToInt32(constant), ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
                 }
 
                 curr++;
@@ -73,6 +130,43 @@ namespace ASC_RiscV_P {
             }
 
             bin.Flush();
+            bin.Close();
+
+        }
+
+        static void AssembleData(ref int curr, string s, ref Queue<bool> bits){
+
+            while (curr < s.Length) {
+
+                if (s[curr] == 0) break;
+
+                if (IsTextSectionStart(curr, s)){
+                    JumpToNextLine(ref curr, s);
+                    break;
+                }
+
+                if (s[curr] == '.' || s[curr] == '#') {
+                    JumpToNextLine(ref curr, s);
+                    continue;
+                }
+
+                if (IsWhitespace(s[curr])) {
+                    JumpPastWhitespace(ref curr, s);
+                    continue;
+                }
+
+                WriteCode(MainClass.Codes["var"], ref bits);
+                WriteCode(GetVariableCode(GetLabel(curr, s)), ref bits);
+                JumpToNextWord(ref curr, s);
+
+                string type = GetWord(ref curr, s, true);
+                switch (type){
+                    case ".asciz":
+                        WriteCode((byte)1, ref bits);
+                        WriteCode(Encoding.ASCII.GetBytes(GetString(ref curr, s, true)), ref bits, true); 
+                        break;
+                }
+            }
 
         }
 
@@ -81,18 +175,16 @@ namespace ASC_RiscV_P {
         }
 
         static void JumpPastWhitespace(ref int curr, string s) {
-            while (curr < s.Length && (s[curr] == ' ' || s[curr] == '\n' || s[curr] == ',')) curr++;
+            while (curr < s.Length && IsWhitespace(s[curr])) curr++;
         }
 
         static bool IsInstruction(string t, int curr, string s) {
             int i;
             for (i = 0; curr + i < s.Length && i < t.Length && s[curr + i] == t[i]; ++i) ;
-            if (curr + i > s.Length || i < t.Length) return false;
-            return true;
+            return (!(curr + i > s.Length || i < t.Length));
         }
-
         static void JumpToNextWord(ref int curr, string s) {
-            while (curr < s.Length && s[curr] != ' ' && s[curr] != '\n' && s[curr] != ',') ++curr;
+            while (curr < s.Length && !IsWhitespace(s[curr])) ++curr;
             JumpPastWhitespace(ref curr, s);
         }
 
@@ -104,6 +196,11 @@ namespace ASC_RiscV_P {
                 else if (c == '1')
                     bits.Enqueue(true);
         }
+        static void WriteCode(bool[] code, ref Queue<bool> bits){
+            foreach (bool b in code)
+                bits.Enqueue(b);
+        }
+
         static void WriteCode(byte code, ref Queue<bool> bits) {
             for (byte i = 0, a = 128; i < 8; ++i, a >>= 1)
                 bits.Enqueue((code & a) != 0 ? true : false);
@@ -115,25 +212,34 @@ namespace ASC_RiscV_P {
 
             WriteCode(rep, ref bits);
         }
+
+        static void WriteCode(byte[] code, ref Queue<bool> bits, bool addNull = false) {
+            foreach (byte b in code)
+                WriteCode(b, ref bits);
+            if(addNull)
+                WriteCode((byte)0, ref bits);
+        }
+
         static void WriteCode(float code, ref Queue<bool> bits) {
             string rep = Convert.ToString(BitConverter.ToInt32(BitConverter.GetBytes(code), 0), 2);
-            Console.WriteLine(rep);
             while (rep.Length != 32)
                 rep = '0' + rep;
 
             WriteCode(rep, ref bits);
         }
 
+        static bool IsDataSectionStart(int curr, string s) => IsInstruction(".section .rodata", curr, s);
+        static bool IsTextSectionStart(int curr, string s) => IsInstruction(".section .text", curr, s);
 
 
         static bool IsLabel(int curr, string s) {
-            while (curr < s.Length && s[curr] != ' ' && s[curr] != '\n' && s[curr] != ':' && s[curr] != ',') ++curr;
+            while (curr < s.Length && !IsWhitespace(s[curr]) && s[curr] != ':') ++curr;
             return curr < s.Length && s[curr] == ':';
         }
 
         static string GetWord(ref int curr, string s, bool skipWhiteSpace = false){
             string t = "";
-            while(curr < s.Length && s[curr] != ' ' && s[curr] != '\n' && s[curr] != ','){
+            while(curr < s.Length && !IsWhitespace(s[curr])) {
                 t += s[curr];
                 curr++;
             }
@@ -143,17 +249,36 @@ namespace ASC_RiscV_P {
             return t;
         }
 
+        static string GetString(ref int curr, string s, bool skipWhiteSpace = false) {
+            string t = "";
+
+            curr++;
+            while (curr < s.Length && s[curr] != '"') t += s[curr++];
+            curr++;
+
+            if (skipWhiteSpace) JumpPastWhitespace(ref curr, s);
+            return t;
+        }
+
         static string GetLabel(int curr, string s){
             string label = "";
-            while (curr < s.Length && s[curr] != ' ' && s[curr] != '\n' && s[curr] != ':' && s[curr] != ',') { label += s[curr]; ++curr; }
+            while (curr < s.Length && !IsWhitespace(s[curr]) && s[curr] != ':') { label += s[curr]; ++curr; }
             return label;
         }
 
-        static byte currLabel = 1; 
-        
+        static byte currLabel = 1;
+        static byte currVar = 0;
+
         static byte GetLabelCode(string label) {
             if(!Labels.Keys.Contains(label)) Labels[label] = currLabel++;
             return Labels[label];
         } 
+
+        static byte GetVariableCode(string name){
+            if (!Variables.Keys.Contains(name)) Variables[name] = currVar++;
+            return Variables[name];
+        }
+
+        static bool IsWhitespace(char c) => Char.IsWhiteSpace(c) || c == ',' || c == '(' || c == ')';
     }
 }
