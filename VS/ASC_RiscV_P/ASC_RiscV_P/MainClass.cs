@@ -8,6 +8,8 @@ using System.IO;
 namespace ASC_RiscV_P {
     internal class MainClass {
 
+        public static string Code = "strncpy";
+
         public static Dictionary<string, string> Codes = new();
         public static Dictionary<string, string> Instructions = new();
         public static Dictionary<string, bool[]> RegisterCodes = new();
