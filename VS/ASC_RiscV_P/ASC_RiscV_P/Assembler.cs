@@ -59,13 +59,12 @@ namespace ASC_RiscV_P {
                     string constant = GetWord(ref curr, s, true);
 
                     if (reg[0] != 'f')
-                        WriteCode(Convert.ToInt32(constant), ref bits);
+                        WriteCode(Convert.ToInt64(constant), ref bits);
                     else
                         WriteCode(Convert.ToSingle(constant), ref bits);
 
                     continue;
                 }
-
                 if (IsInstruction("la", curr, s)) {
                     WriteCode(MainClass.Codes["la"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -96,7 +95,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("add", curr, s)) {
                     WriteCode(MainClass.Codes["add"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -115,7 +113,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("sub", curr, s)) {
                     WriteCode(MainClass.Codes["sub"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -134,7 +131,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("lb", curr, s)) {
                     WriteCode(MainClass.Codes["lb"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -144,7 +140,7 @@ namespace ASC_RiscV_P {
                     WriteCode(MainClass.RegisterCodes[reg], ref bits);
 
                     string constant = GetWord(ref curr, s, true);
-                    WriteCode(Convert.ToInt32(constant), ref bits);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
 
                     reg = GetWord(ref curr, s, true);
                     WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
@@ -161,7 +157,7 @@ namespace ASC_RiscV_P {
                     WriteCode(MainClass.RegisterCodes[reg], ref bits);
 
                     string constant = GetWord(ref curr, s, true);
-                    WriteCode(Convert.ToInt32(constant), ref bits);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
 
                     reg = GetWord(ref curr, s, true);
                     WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
@@ -169,7 +165,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("srai", curr, s)) {
                     WriteCode(MainClass.Codes["srai"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -183,7 +178,7 @@ namespace ASC_RiscV_P {
                     WriteCode(MainClass.RegisterCodes[reg], ref bits);
 
                     string constant = GetWord(ref curr, s, true);
-                    WriteCode(Convert.ToInt32(constant), ref bits);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
 
                     continue;
                 }
@@ -196,7 +191,7 @@ namespace ASC_RiscV_P {
                     WriteCode(MainClass.RegisterCodes[reg], ref bits);
 
                     string constant = GetWord(ref curr, s, true);
-                    WriteCode(Convert.ToInt32(constant), ref bits);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
 
                     reg = GetWord(ref curr, s, true);
                     WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
@@ -213,7 +208,7 @@ namespace ASC_RiscV_P {
                     WriteCode(MainClass.RegisterCodes[reg], ref bits);
 
                     string constant = GetWord(ref curr, s, true);
-                    WriteCode(Convert.ToInt32(constant), ref bits);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
 
                     reg = GetWord(ref curr, s, true);
                     WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
@@ -221,7 +216,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("beqz", curr, s)) {
                     WriteCode(MainClass.Codes["beqz"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -238,7 +232,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("bge", curr, s)) {
                     WriteCode(MainClass.Codes["bge"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -259,7 +252,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("j", curr, s)) {
 
                     WriteCode(MainClass.Codes["j"], ref bits);
@@ -297,7 +289,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (IsInstruction("ret", curr, s)) {
                     WriteCode(MainClass.Codes["ret"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -326,6 +317,10 @@ namespace ASC_RiscV_P {
 
         static void AssembleData(ref int curr, string s, ref Queue<bool> bits){
 
+            Queue<bool> dataBits = new();
+            Queue<Tuple<byte, int>> Vars = new();
+            int localAddress = 0;
+
             while (curr < s.Length) {
 
                 if (s[curr] == 0) break;
@@ -345,18 +340,40 @@ namespace ASC_RiscV_P {
                     continue;
                 }
 
-                WriteCode(MainClass.Codes["var"], ref bits);
-                WriteCode(GetVariableCode(GetLabel(curr, s)), ref bits);
+                Vars.Enqueue(new Tuple<byte, int>(GetVariableCode(GetLabel(curr, s)), localAddress));
                 JumpToNextWord(ref curr, s);
 
                 string type = GetWord(ref curr, s, true);
                 switch (type){
                     case ".asciz":
-                        bits.Enqueue(false); bits.Enqueue(true);
-                        WriteCode(Encoding.ASCII.GetBytes(GetString(ref curr, s, true)), ref bits, true); 
+                        byte[] bytes = Encoding.ASCII.GetBytes(GetString(ref curr, s, true));
+                        WriteCode(bytes, ref dataBits, true);
+                        localAddress += bytes.Length * 8;
+                        break;
+
+                    case ".word":
+                        string word = ""; 
+                        do {
+                            word = GetWord(ref curr, s, true, false);
+                            WriteCode(Convert.ToInt32(word.Replace(",", "")), ref dataBits);
+                            localAddress += 32;
+                        } while (word[word.Length - 1] == ',');
                         break;
                 }
             }
+            int textOffset = 32 + Vars.Count * 40 + MainClass.Codes["eof"].Length + dataBits.Count;
+            int dataOffset = 32 + Vars.Count * 40 + MainClass.Codes["eof"].Length;
+            WriteCode(textOffset, ref bits);
+            
+            while(Vars.Count != 0){
+                Tuple<byte, int> t = Vars.Dequeue();
+                WriteCode(t.Item1, ref bits); WriteCode(t.Item2 + dataOffset, ref bits);
+            }
+
+            WriteCode(MainClass.Codes["eof"], ref bits);
+
+            while (dataBits.Count != 0)
+                bits.Enqueue(dataBits.Dequeue());
         }
 
         static void JumpToNextLine(ref int curr, string s) {
@@ -401,6 +418,13 @@ namespace ASC_RiscV_P {
 
             WriteCode(rep, ref bits);
         }
+        static void WriteCode(int code, ref Queue<bool> bits) {
+            string rep = Convert.ToString(code, 2);
+            while (rep.Length != 32)
+                rep = '0' + rep;
+
+            WriteCode(rep, ref bits);
+        }
 
         static void WriteCode(byte[] code, ref Queue<bool> bits, bool addNull = false) {
             foreach (byte b in code)
@@ -426,9 +450,9 @@ namespace ASC_RiscV_P {
             return curr < s.Length && s[curr] == ':';
         }
 
-        static string GetWord(ref int curr, string s, bool skipWhiteSpace = false){
+        static string GetWord(ref int curr, string s, bool skipWhiteSpace = false, bool ignoreComma = true){
             string t = "";
-            while(curr < s.Length && !IsWhitespace(s[curr])) {
+            while(curr < s.Length && (!IsWhitespace(s[curr]) || (s[curr] == ',' && !ignoreComma))) {
                 t += s[curr];
                 curr++;
             }

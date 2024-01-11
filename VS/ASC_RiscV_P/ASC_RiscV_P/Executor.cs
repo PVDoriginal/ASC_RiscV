@@ -12,7 +12,6 @@ namespace ASC_RiscV_P {
         static long[] RegisterValues = new long[32];
         static float[] FRegisterValues = new float[32];
 
-
         public static void Execute(){
 
             BinaryReader bin = new BinaryReader(File.Open(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "/Binaries/" + MainClass.Code + ".bin", FileMode.Open));
@@ -31,7 +30,9 @@ namespace ASC_RiscV_P {
 
             RegisterValues[2] = bits.Count / 8;
 
-            RecordLabels(bits);
+            RecordVars(bits, 32, GetInt(0, bits));
+            RecordLabels(bits, GetInt(0, bits));
+
             Execute(LabelPositions[0][0], bits); // execute main
 
             WriteEndStatus();
@@ -62,7 +63,6 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg] = GetConstantFloat(ref curr, bits);
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "la") {
                     bool rtype = bits[curr++];
                     int reg = GetRegister(curr, bits); curr += 5;
@@ -74,7 +74,6 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg] = VariablePositions[variable] / 8;
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "add") {
 
                     bool rtype = bits[curr++];
@@ -105,7 +104,6 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg1] = FRegisterValues[reg2] - FRegisterValues[reg3];
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "lb") {
 
                     bool rtype = bits[curr++];
@@ -175,7 +173,6 @@ namespace ASC_RiscV_P {
                         WriteDoubleAt((int)address * 8, (long)FRegisterValues[reg_source], bits);
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "srai") {
 
                     bool rtype = bits[curr++];
@@ -192,7 +189,6 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg_dest] = (int)RegisterValues[reg_source] >> (int)constant;
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "beqz") {
 
                     bool rtype = bits[curr++];
@@ -207,7 +203,6 @@ namespace ASC_RiscV_P {
                     }
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "bge") {
 
                     bool rtype = bits[curr++];
@@ -228,7 +223,6 @@ namespace ASC_RiscV_P {
                     }
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "addi") {
 
                     bool rtype = bits[curr++];
@@ -246,7 +240,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "j") {
 
                     bool jumpType = bits[curr++];
@@ -255,7 +248,6 @@ namespace ASC_RiscV_P {
                     Execute(GetLabelJumpPos(label, curr, jumpType), bits);
                     return;
                 }
-
                 if (MainClass.Instructions[s] == "mv") {
 
                     bool rtype = bits[curr++];
@@ -275,7 +267,6 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
-
                 if (MainClass.Instructions[s] == "call") {
                     byte label = GetByte(ref curr, bits);
 
@@ -285,7 +276,6 @@ namespace ASC_RiscV_P {
                     Execute(LabelPositions[label][0], bits);
                     return;
                 }
-
                 if (MainClass.Instructions[s] == "ret") {
                     Execute((int)RegisterValues[1], bits);
                     return;
@@ -293,9 +283,17 @@ namespace ASC_RiscV_P {
             }
         }
 
-        static void RecordLabels(List<bool> bits){
+        static void RecordVars(List<bool> bits, int start, int end){
+            while(true){
+                byte name = GetByte(ref start, bits);
+                if (name == Convert.ToInt32(MainClass.Codes["eof"], 2)) break;
+                int pos = GetInt(start, bits); start += 32;
+                VariablePositions[name] = pos;
+            }
+        }
 
-            int curr = 0;
+        static void RecordLabels(List<bool> bits, int curr){
+
             while (curr < bits.Count) {
 
                 string s = "";
@@ -310,30 +308,9 @@ namespace ASC_RiscV_P {
                     continue;
                 }
 
-                if (MainClass.Instructions[s] == "var") {
-                    byte varId = GetByte(ref curr, bits);
-                    int type = (bits[curr] ? 1 : 0) * 2 + (bits[curr + 1] ? 1 : 0);
-                    curr += 2;
-
-                    VariablePositions[varId] = curr;
-
-                    switch (type) {
-
-                        //asciz 
-                        case 1:
-                            byte b = 1;
-                            while(b != 0)
-                                b = GetByte(ref curr, bits);    
-
-                            break;
-
-                    }
-                    continue;
-                }
-
                 bool foundInstruction = false;
                 foreach (string instruction in MainClass.Codes.Keys)
-                    if (instruction != "var" && instruction != "label" && MainClass.Instructions[s] == instruction) {
+                    if (instruction != "eof" && MainClass.Instructions[s] == instruction) {
                         curr += MainClass.InstructionSizes[instruction];
                         foundInstruction = true; break; 
                     }
@@ -429,8 +406,14 @@ namespace ASC_RiscV_P {
             string bin = "";
             for (int i = 0; i < 64; ++i)
                 bin += (bits[curr + i] ? "1" : "0");
-
             return Convert.ToInt64(bin, 2);
+        }
+
+        static int GetInt(int curr, List<bool> bits){
+            string bin = "";
+            for (int i = 0; i < 32; ++i)
+                bin += (bits[curr + i] ? "1" : "0");
+            return Convert.ToInt32(bin, 2);
         }
 
         static byte GetByte(int curr, List<bool> bits){
@@ -456,7 +439,6 @@ namespace ASC_RiscV_P {
             string t = "";
             for (int i = 0; i < 32; ++i)
                 t += bits[curr++] ? "1" : "0";
-            Console.WriteLine(t);
             return BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(t, 2)), 0);
         }
 

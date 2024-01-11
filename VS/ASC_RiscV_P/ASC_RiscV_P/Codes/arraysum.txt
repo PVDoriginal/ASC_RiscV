@@ -1,0 +1,9 @@
+﻿.section .rodata
+	msg: .asciz "abc"
+    arr: .word 1, 30, 4, 7
+
+.section .text
+.global _start
+_start:
+	la a0, msg
+	call printf
