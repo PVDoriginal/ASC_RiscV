@@ -1,0 +1,69 @@
+﻿.section .rodata
+    arr: .long 1, 30, 4, 12, 9, 9, 3, 100, 2
+    r_long: .asciz "%ld "
+
+.section .text
+.global bubsort
+bubsort:
+    # a0 = long *list
+    # a1 = size
+    # t0 = swapped
+    # t1 = i
+1: # do loop
+    li t0, 0          # swapped = false
+    li t1, 1          # i = 1
+2: # for loop
+    bge t1, a1, 2f    # break if i >= size
+    slli t3, t1, 3    # scale i by 8 (for long)
+    add t3, a0, t3    # new scaled memory address
+    ld  t4, -8(t3)    # load list[i-1] into t4
+    ld  t5, 0(t3)     # load list[i] into t5
+    ble t4, t5, 3f    # if list[i-1] < list[i], it's in position
+    # if we get here, we need to swap
+    li  t0, 1         # swapped = true
+    sd  t4, 0(t3)     # list[i] = list[i-1]
+    sd  t5, -8(t3)    # list[i-1] = list[i]
+3: # bottom of for loop body
+    addi t1, t1, 1    # i++
+    j    2b           # loop again
+2: # bottom of do loop body
+    bnez t0, 1b       # loop if swapped = true
+    ret               # return via return address register
+
+.global print_list
+print_list:             
+    # procedure for printing all list values
+    # a0 = long *list
+    # a1 = size
+    # t1 = i
+
+    li t1, 0
+1:
+    bge t1, a1, 1f
+    
+    mv s2, a0
+    mv s3, a1
+    mv a1, a0
+    ld a1, 0(a1)
+    la a0, r_long
+    call printf
+    mv a0, s2
+    mv a1, s3
+
+    addi a0, a0, 8
+    addi t1, t1, 1
+
+    j 1b
+1:
+    ret
+    
+
+.global _start
+_start:
+	la a0, arr
+    li a1, 9
+	call bubsort
+
+    la a0, arr
+    li a1, 9
+    call print_list

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,8 +8,8 @@ using System.IO;
 
 namespace ASC_RiscV_P {
     internal class MainClass {
-
-        public static string Code = "strrev";
+        
+        public static string Code = "distance";
 
         public static Dictionary<string, string> Codes = new();
         public static Dictionary<string, string> Instructions = new();
@@ -16,9 +17,7 @@ namespace ASC_RiscV_P {
         public static Dictionary<string, int> InstructionSizes = new();
 
         static void Main(string[] args) {
-
             GetCodes();
-
             Console.WriteLine("Input 1 to Assemble, 2 to Execute, 3 for Both");
             int x = int.Parse(Console.ReadLine());
 

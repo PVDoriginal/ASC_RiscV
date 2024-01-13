@@ -1,0 +1,11 @@
+﻿.section .rodata
+    from: .double 1.4, 2.3
+    to: .double 10.4, 11.2
+    r_double: .asciz "%f "
+
+.section .text
+.global _start
+_start:
+    
+    la a0, from
+    fld ft0, 0(a0)

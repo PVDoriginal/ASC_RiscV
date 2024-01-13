@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,11 +7,13 @@ using System.Threading.Tasks;
 
 namespace ASC_RiscV_P {
     internal class Executor {
+        [DllImport("msvcr120.dll")]
+        public static extern int printf(string format, __arglist);
 
         static Dictionary<byte, List<int>> LabelPositions = new();
         static Dictionary<byte, int> VariablePositions = new();
         static long[] RegisterValues = new long[32];
-        static float[] FRegisterValues = new float[32];
+        static double[] FRegisterValues = new double[32];
 
         public static void Execute(){
 
@@ -46,6 +49,8 @@ namespace ASC_RiscV_P {
                 while (curr < bits.Count && !MainClass.Instructions.Keys.Contains(s))
                     s += bits[curr++] ? "1" : "0";
 
+                //Console.WriteLine(s);
+
                 if (curr == bits.Count) break;
                 if(MainClass.Instructions[s] == "eof"){ return; }
                 if (MainClass.Instructions[s] == "label") {
@@ -60,7 +65,7 @@ namespace ASC_RiscV_P {
                     if (!rtype)
                         RegisterValues[reg] = GetConstant(ref curr, bits);
                     else
-                        FRegisterValues[reg] = GetConstantFloat(ref curr, bits);
+                        FRegisterValues[reg] = GetConstantDouble(ref curr, bits);
                     continue;
                 }
                 if (MainClass.Instructions[s] == "la") {
@@ -104,6 +109,21 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg1] = FRegisterValues[reg2] - FRegisterValues[reg3];
                     continue;
                 }
+                if (MainClass.Instructions[s] == "fsub.d") {
+
+                    bool rtype = bits[curr++];
+                    int reg1 = GetRegister(curr, bits); curr += 5;
+                    curr++;
+                    int reg2 = GetRegister(curr, bits); curr += 5;
+                    curr++;
+                    int reg3 = GetRegister(curr, bits); curr += 5;
+
+                    if (!rtype)
+                        RegisterValues[reg1] = RegisterValues[reg2] - RegisterValues[reg3];
+                    else
+                        FRegisterValues[reg1] = FRegisterValues[reg2] - FRegisterValues[reg3];
+                    continue;
+                }
                 if (MainClass.Instructions[s] == "lb") {
 
                     bool rtype = bits[curr++];
@@ -121,6 +141,23 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg_dest] = GetByte((int)address * 8, bits);
                     continue;
                 }
+                if (MainClass.Instructions[s] == "lw") {
+
+                    bool rtype = bits[curr++];
+                    int reg_dest = GetRegister(curr, bits); curr += 5;
+
+                    long constant = GetConstant(ref curr, bits);
+                    curr++;
+                    int reg_op = GetRegister(curr, bits); curr += 5;
+
+                    long address = constant + RegisterValues[reg_op];
+
+                    if (!rtype)
+                        RegisterValues[reg_dest] = GetInt((int)address * 8, bits);
+                    else
+                        FRegisterValues[reg_dest] = GetInt((int)address * 8, bits);
+                    continue;
+                }
                 if (MainClass.Instructions[s] == "ld") {
 
                     bool rtype = bits[curr++];
@@ -133,9 +170,29 @@ namespace ASC_RiscV_P {
                     long address = constant + RegisterValues[reg_op];
 
                     if (!rtype)
-                        RegisterValues[reg_dest] = (int)GetDouble((int)address * 8, bits);
+                        RegisterValues[reg_dest] = GetDouble((int)address * 8, bits);
                     else
-                        FRegisterValues[reg_dest] = (int)GetDouble((int)address * 8, bits);
+                        FRegisterValues[reg_dest] = GetDouble((int)address * 8, bits);
+
+                    continue;
+                }
+                if (MainClass.Instructions[s] == "fld") {
+
+                    bool rtype = bits[curr++];
+                    int reg_dest = GetRegister(curr, bits); curr += 5;
+
+                    long constant = GetConstant(ref curr, bits);
+
+                    bool rtype2 = bits[curr++];
+                    int reg_op = GetRegister(curr, bits); curr += 5;
+
+                    
+                    long address = RegisterValues[reg_op];
+
+                    if (!rtype)
+                        RegisterValues[reg_dest] = GetDouble((int)address * 8, bits);
+                    else
+                        FRegisterValues[reg_dest] = GetFloatDouble((int)address * 8, bits);
 
                     continue;
                 }
@@ -189,6 +246,22 @@ namespace ASC_RiscV_P {
                         FRegisterValues[reg_dest] = (int)RegisterValues[reg_source] >> (int)constant;
                     continue;
                 }
+                if (MainClass.Instructions[s] == "slli") {
+
+                    bool rtype = bits[curr++];
+                    int reg_dest = GetRegister(curr, bits); curr += 5;
+
+                    curr++;
+                    int reg_source = GetRegister(curr, bits); curr += 5;
+
+                    long constant = GetConstant(ref curr, bits);
+
+                    if (!rtype)
+                        RegisterValues[reg_dest] = (int)RegisterValues[reg_source] << (int)constant;
+                    else
+                        FRegisterValues[reg_dest] = (int)RegisterValues[reg_source] << (int)constant;
+                    continue;
+                }
                 if (MainClass.Instructions[s] == "beqz") {
 
                     bool rtype = bits[curr++];
@@ -198,6 +271,20 @@ namespace ASC_RiscV_P {
                     byte label = GetByte(ref curr, bits);
 
                     if ((!rtype && RegisterValues[reg] == 0) || (rtype && FRegisterValues[reg] == 0)) {
+                        Execute(GetLabelJumpPos(label, curr, jumpType), bits);
+                        return;
+                    }
+                    continue;
+                }
+                if (MainClass.Instructions[s] == "bnez") {
+
+                    bool rtype = bits[curr++];
+                    int reg = GetRegister(curr, bits); curr += 5;
+
+                    bool jumpType = bits[curr++];
+                    byte label = GetByte(ref curr, bits);
+
+                    if ((!rtype && RegisterValues[reg] != 0) || (rtype && FRegisterValues[reg] != 0)) {
                         Execute(GetLabelJumpPos(label, curr, jumpType), bits);
                         return;
                     }
@@ -218,6 +305,26 @@ namespace ASC_RiscV_P {
                     var val2 = (!rtype ? RegisterValues[reg2] : FRegisterValues[reg2]);
 
                     if (val1 >= val2) {
+                        Execute(GetLabelJumpPos(label, curr, jumpType), bits);
+                        return;
+                    }
+                    continue;
+                }
+                if (MainClass.Instructions[s] == "ble") {
+
+                    bool rtype = bits[curr++];
+                    int reg1 = GetRegister(curr, bits); curr += 5;
+
+                    bool rtype2 = bits[curr++];
+                    int reg2 = GetRegister(curr, bits); curr += 5;
+
+                    bool jumpType = bits[curr++];
+                    byte label = GetByte(ref curr, bits);
+
+                    var val1 = (!rtype ? RegisterValues[reg1] : FRegisterValues[reg1]);
+                    var val2 = (!rtype ? RegisterValues[reg2] : FRegisterValues[reg2]);
+
+                    if (val1 <= val2) {
                         Execute(GetLabelJumpPos(label, curr, jumpType), bits);
                         return;
                     }
@@ -342,22 +449,35 @@ namespace ASC_RiscV_P {
 
         static void PrintF(List<bool> bits){
             int address = (int)RegisterValues[10] * 8;
+            string s = "";
             byte b = 1;
             while(b != 0){
                 b = GetByte(ref address, bits);
-                Console.Write(Convert.ToChar(b));
+                s += Convert.ToChar(b);
             }
+            printf(s, __arglist(RegisterValues[11], RegisterValues[12], RegisterValues[13], RegisterValues[14], RegisterValues[15], RegisterValues[16], RegisterValues[17]));
         }
 
         static int GetLabelJumpPos(byte label, int curr, bool jumpType){
-            int index = curr;
-            for (int i = 0; i < LabelPositions[label].Count; ++i)
-                if (LabelPositions[label][i] > curr) {
-                    index = i;
-                    break;
-                }
-            if (!jumpType) --index;
-            return LabelPositions[label][index];
+
+            if (jumpType) {
+                int index = curr;
+                for (int i = 0; i < LabelPositions[label].Count; ++i)
+                    if (LabelPositions[label][i] > curr) {
+                        index = i;
+                        break;
+                    }
+                return LabelPositions[label][index];
+            }
+            else {
+                int index = curr;
+                for (int i = LabelPositions[label].Count-1; i >= 0; --i)
+                    if (LabelPositions[label][i] < curr) {
+                        index = i;
+                        break;
+                    }
+                return LabelPositions[label][index];
+            }
         }
         static void RegisterLabel(byte label, int pos){
 
@@ -409,6 +529,13 @@ namespace ASC_RiscV_P {
             return Convert.ToInt64(bin, 2);
         }
 
+        static double GetFloatDouble(int curr, List<bool> bits) {
+            string bin = "";
+            for (int i = 0; i < 64; ++i)
+                bin += (bits[curr + i] ? "1" : "0");
+            return BitConverter.ToDouble(BitConverter.GetBytes(Convert.ToInt64(bin, 2)));
+        }
+
         static int GetInt(int curr, List<bool> bits){
             string bin = "";
             for (int i = 0; i < 32; ++i)
@@ -435,11 +562,11 @@ namespace ASC_RiscV_P {
             return Convert.ToInt64(t, 2);  
         }
 
-        static float GetConstantFloat(ref int curr, List<bool> bits){
+        static double GetConstantDouble(ref int curr, List<bool> bits){
             string t = "";
             for (int i = 0; i < 32; ++i)
                 t += bits[curr++] ? "1" : "0";
-            return BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(t, 2)), 0);
+            return BitConverter.ToDouble(BitConverter.GetBytes(Convert.ToInt64(t, 2)), 0);
         }
 
         static List<bool> GetBytes(BinaryReader bin){

@@ -25,6 +25,8 @@ namespace ASC_RiscV_P {
 
             while (curr < s.Length) {
 
+                //Console.WriteLine(s[curr]);
+
                 if (IsDataSectionStart(curr, s)) {
                     JumpToNextLine(ref curr, s);
                     AssembleData(ref curr, s, ref bits);
@@ -131,6 +133,74 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
+                if (IsInstruction("fsub.d", curr, s)) {
+                    WriteCode(MainClass.Codes["fsub.d"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fmul.d", curr, s)) {
+                    WriteCode(MainClass.Codes["fmul.d"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fadd.d", curr, s)) {
+                    WriteCode(MainClass.Codes["fadd.d"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fsqrt.d", curr, s)) {
+                    WriteCode(MainClass.Codes["fsqrt.d"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
                 if (IsInstruction("lb", curr, s)) {
                     WriteCode(MainClass.Codes["lb"], ref bits);
                     JumpToNextWord(ref curr, s);
@@ -165,8 +235,59 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
+                if (IsInstruction("fld", curr, s)) {
+                    WriteCode(MainClass.Codes["fld"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string constant = GetWord(ref curr, s, true);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("lw", curr, s)) {
+                    WriteCode(MainClass.Codes["lw"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string constant = GetWord(ref curr, s, true);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
                 if (IsInstruction("srai", curr, s)) {
                     WriteCode(MainClass.Codes["srai"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string constant = GetWord(ref curr, s, true);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("slli", curr, s)) {
+                    WriteCode(MainClass.Codes["slli"], ref bits);
                     JumpToNextWord(ref curr, s);
 
                     string reg = GetWord(ref curr, s, true);
@@ -232,8 +353,44 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
+                if (IsInstruction("bnez", curr, s)) {
+                    WriteCode(MainClass.Codes["bnez"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string label = GetWord(ref curr, s, true);
+                    WriteCode(label[label.Length - 1] == 'f' ? "1" : "0", ref bits);
+
+                    label = label.Substring(0, label.Length - 1);
+                    WriteCode(GetLabelCode(label), ref bits);
+
+                    continue;
+                }
                 if (IsInstruction("bge", curr, s)) {
                     WriteCode(MainClass.Codes["bge"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string label = GetWord(ref curr, s, true);
+                    WriteCode(label[label.Length - 1] == 'f' ? "1" : "0", ref bits);
+
+                    label = label.Substring(0, label.Length - 1);
+                    WriteCode(GetLabelCode(label), ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("ble", curr, s)) {
+                    WriteCode(MainClass.Codes["ble"], ref bits);
                     JumpToNextWord(ref curr, s);
 
                     string reg = GetWord(ref curr, s, true);
@@ -348,7 +505,7 @@ namespace ASC_RiscV_P {
                     case ".asciz":
                         byte[] bytes = Encoding.ASCII.GetBytes(GetString(ref curr, s, true));
                         WriteCode(bytes, ref dataBits, true);
-                        localAddress += bytes.Length * 8;
+                        localAddress += (bytes.Length+1) * 8;
                         break;
 
                     case ".word":
@@ -357,6 +514,24 @@ namespace ASC_RiscV_P {
                             word = GetWord(ref curr, s, true, false);
                             WriteCode(Convert.ToInt32(word.Replace(",", "")), ref dataBits);
                             localAddress += 32;
+                        } while (word[word.Length - 1] == ',');
+                        break;
+
+                    case ".long":
+                        word = "";
+                        do {
+                            word = GetWord(ref curr, s, true, false);
+                            WriteCode(Convert.ToInt64(word.Replace(",", "")), ref dataBits);
+                            localAddress += 64;
+                        } while (word[word.Length - 1] == ',');
+                        break;
+
+                    case ".double":
+                        word = "";
+                        do {
+                            word = GetWord(ref curr, s, true, false);
+                            WriteCode(Convert.ToDouble(word.Replace(",", "")), ref dataBits);
+                            localAddress += 64;
                         } while (word[word.Length - 1] == ',');
                         break;
                 }
@@ -433,9 +608,9 @@ namespace ASC_RiscV_P {
                 WriteCode((byte)0, ref bits);
         }
 
-        static void WriteCode(float code, ref Queue<bool> bits) {
-            string rep = Convert.ToString(BitConverter.ToInt32(BitConverter.GetBytes(code), 0), 2);
-            while (rep.Length != 32)
+        static void WriteCode(double code, ref Queue<bool> bits) {
+            string rep = Convert.ToString(BitConverter.ToInt64(BitConverter.GetBytes(code), 0), 2);
+            while (rep.Length != 64)
                 rep = '0' + rep;
 
             WriteCode(rep, ref bits);
