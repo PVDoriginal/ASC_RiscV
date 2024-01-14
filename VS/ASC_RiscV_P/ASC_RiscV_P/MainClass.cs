@@ -9,7 +9,7 @@ using System.IO;
 namespace ASC_RiscV_P {
     internal class MainClass {
 
-        public static string Code = "addll"; // "addl", "cfunc", etc. 
+        public static string Code = "strlen"; // "addl", "cfunc", etc. 
 
         public static Dictionary<string, string> Codes = new();
         public static Dictionary<string, string> Instructions = new();
