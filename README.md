@@ -6,7 +6,7 @@
 ```Cs 
 public static string Code = "exemplu";
 ```
-- Se ruleaza proiectul si se alege o optiune dintre *Assemble*, *Execute* sau *Both*.
+- Se ruleaza proiectul in vscode si se alege o optiune dintre *Assemble*, *Execute* sau *Both*.
 
 - **In folderul 'Codes/' au fost deja adaugate exemplele de programe din cerinta proiectului.**
 
