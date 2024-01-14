@@ -33,5 +33,5 @@ public static extern int printf(string format, __arglist);
 public static extern int scanf(string format, __arglist);
 ```
   - Implementarea functiei printf  foloseste *doar* registrii intregi *a1, ...*.
-  - Pentru afisarea valorilor reale din *fa0, fa1, ...*, a fost creeata o functie fprintf (adresa stringului de inceput se memoreaza tot in a0!)
+  - Pentru afisarea valorilor reale din *fa0, fa1, ...*, a fost creata o functie fprintf (adresa stringului de inceput se memoreaza tot in a0!)
   - Similar, scanf poate citi doar valori intregi.
