@@ -22,7 +22,7 @@ public static string Code = "exemplu";
   - Dupa, se adauga metadata pentru fiecare variabila. Mai exact, id-ul variabilei urmat de adresa la care incepe aceasta.
   - Urmatoarea secventa de biti reprezinta valorile propriu-zise ale variabilelor, fara alte informatii intre ele, pentru simularea exacta a unei structuri de date risc-v
   - Urmeaza date din sectiunea .text, codurile instructiunilor urmate de parametrii acestora
-  - La final sunt adaugati 5000 biti ce vor functiona pe post de stiva programului
+  - La executare sunt adaugati la final 5000 biti ce vor functiona pe post de stiva programului
 
 ## Particularitati tehnice: 
   - Functiile **printf** si **scanf** sunt importate din C (P/Invoke):
