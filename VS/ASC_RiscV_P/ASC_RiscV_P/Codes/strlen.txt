@@ -1,5 +1,7 @@
-﻿.section .rodata
+﻿
+.section .rodata
 	msg: .asciz "abcd"
+    r_long: .asciz "%ld"
 
 .section .text
 .global strlen
@@ -20,3 +22,7 @@ strlen:
 _start:
 	la a0, msg
     call strlen
+
+    mv a1, a0
+    la a0, r_long
+    call printf

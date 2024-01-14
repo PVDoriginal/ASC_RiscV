@@ -1,0 +1,82 @@
+﻿.section .rodata
+    dst: .float 0, 0, 0
+    matrix: .float 1, 2.5, 3, 4.02, 5, 6.5, 7, 8, 9
+    vector: .float 1, 2, 3.1
+    r_float: .asciz "%f "
+
+.section .text
+.global matmul
+matmul:
+    # a0 = dst[3]
+    # a1 = matrix[3][3]
+    # a2 = vector[3]
+    # t0 = r
+    # t1 = c
+    # t3 = 3
+    # ft0 = d
+    # Row for loop
+    li      t0, 0
+    li      t3, 3
+1:
+    bge     t0, t3, 1f  # break when we are done
+    fmv.s.x fa0, zero   # Set d = 0
+    # Column for loop
+    li      t1, 0
+2:
+    bge     t1, t3, 2f
+    flw     ft0, 0(a1)     # Load matrix value
+    flw     ft1, 0(a2)     # Load vector value
+    fmul.s  ft0, ft0, ft1  # ft0 = matrix[r][c] * vec[c]
+    fadd.s  fa0, fa0, ft0  # d = d + ft0
+    addi    t1, t1, 1
+    addi    a1, a1, 4   # Move to the next matrix value
+    addi    a2, a2, 4   # Move to the next vector value
+    j       2b
+2:
+    addi    a2, a2, -12 # Move the vector back to the top
+    fsw     fa0, 0(a0)  # dst[r] = d
+    addi    t0, t0, 1
+    addi    a0, a0, 4   # Move to next destination
+    j       1b
+1:
+    ret
+    
+.global print_list
+print_list:             
+    # procedure for printing all list values
+    # a0 = long *list
+    # a1 = size
+    # t1 = i
+
+    li t1, 0
+1:
+    bge t1, a1, 1f
+    
+    mv s2, a0
+    mv s3, a1
+    mv a1, a0
+    flw fa0, 0(a1)
+    la a0, r_float
+    call fprintf
+    mv a0, s2
+    mv a1, s3
+
+    addi a0, a0, 4
+    addi t1, t1, 1
+
+    j 1b
+1:
+    ret
+
+.global _start
+_start:
+    la a0, dst
+    la a1, matrix
+    la a2, vector
+    call matmul
+
+    la a0, dst
+    flw ft7, 0(a0)
+    li a1, 3
+    call print_list
+

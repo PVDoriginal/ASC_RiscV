@@ -8,8 +8,8 @@ using System.IO;
 
 namespace ASC_RiscV_P {
     internal class MainClass {
-        
-        public static string Code = "distance";
+
+        public static string Code = "addll"; // "addl", "cfunc", etc. 
 
         public static Dictionary<string, string> Codes = new();
         public static Dictionary<string, string> Instructions = new();
@@ -17,6 +17,7 @@ namespace ASC_RiscV_P {
         public static Dictionary<string, int> InstructionSizes = new();
 
         static void Main(string[] args) {
+
             GetCodes();
             Console.WriteLine("Input 1 to Assemble, 2 to Execute, 3 for Both");
             int x = int.Parse(Console.ReadLine());

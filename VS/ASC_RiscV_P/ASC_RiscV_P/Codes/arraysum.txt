@@ -1,6 +1,7 @@
 ﻿.section .rodata
-    arr: .word 1, 30, 4, 7
- 
+    arr: .word 1, 30, 4, 8
+    r_long: .asciz "%ld"
+
 .section .text
 .global arraysum
 arraysum:
@@ -28,3 +29,7 @@ _start:
 	la a0, arr
     li a1, 4
 	call arraysum
+
+    mv a1, a0
+    la a0, r_long
+    call printf

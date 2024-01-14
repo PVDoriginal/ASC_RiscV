@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ASC_RiscV_P {
     internal class Assembler {
+
 
         static Dictionary<string, byte> Labels = new();
         static Dictionary<string, byte> Variables = new();
@@ -14,10 +16,11 @@ namespace ASC_RiscV_P {
             Labels["_start"] = 0;
             Labels["printf"] = 1;
             Labels["scanf"] = 2;
+            Labels["cfunc"] = 3;
+            Labels["fprintf"] = 4;
 
             string s = File.ReadAllText(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "/Codes/" + MainClass.Code + ".txt");
 
-            //BinaryWriter bin = new BinaryWriter(File.Open("D:/Github/ASC_P/VS/ASC_RiscV_P/ASC_RiscV_P/bin.idk", FileMode.Create));
             BinaryWriter bin = new BinaryWriter(File.Open(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "/Binaries/" + MainClass.Code + ".bin", FileMode.Create));
             Queue<bool> bits = new();
 
@@ -63,7 +66,7 @@ namespace ASC_RiscV_P {
                     if (reg[0] != 'f')
                         WriteCode(Convert.ToInt64(constant), ref bits);
                     else
-                        WriteCode(Convert.ToSingle(constant), ref bits);
+                        WriteCode(Convert.ToDouble(constant), ref bits);
 
                     continue;
                 }
@@ -169,8 +172,44 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
+                if (IsInstruction("fmul.s", curr, s)) {
+                    WriteCode(MainClass.Codes["fmul.s"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
                 if (IsInstruction("fadd.d", curr, s)) {
                     WriteCode(MainClass.Codes["fadd.d"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fadd.s", curr, s)) {
+                    WriteCode(MainClass.Codes["fadd.s"], ref bits);
                     JumpToNextWord(ref curr, s);
 
                     string reg = GetWord(ref curr, s, true);
@@ -237,6 +276,40 @@ namespace ASC_RiscV_P {
                 }
                 if (IsInstruction("fld", curr, s)) {
                     WriteCode(MainClass.Codes["fld"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string constant = GetWord(ref curr, s, true);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fsw", curr, s)) {
+                    WriteCode(MainClass.Codes["fsw"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string constant = GetWord(ref curr, s, true);
+                    WriteCode(Convert.ToInt64(constant), ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("flw", curr, s)) {
+                    WriteCode(MainClass.Codes["flw"], ref bits);
                     JumpToNextWord(ref curr, s);
 
                     string reg = GetWord(ref curr, s, true);
@@ -409,6 +482,62 @@ namespace ASC_RiscV_P {
 
                     continue;
                 }
+                if (IsInstruction("bgt", curr, s)) {
+                    WriteCode(MainClass.Codes["bgt"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    string label = GetWord(ref curr, s, true);
+                    WriteCode(label[label.Length - 1] == 'f' ? "1" : "0", ref bits);
+
+                    label = label.Substring(0, label.Length - 1);
+                    WriteCode(GetLabelCode(label), ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fgt.s", curr, s)) {
+                    WriteCode(MainClass.Codes["fgt.s"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("flt.s", curr, s)) {
+                    WriteCode(MainClass.Codes["flt.s"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
                 if (IsInstruction("j", curr, s)) {
 
                     WriteCode(MainClass.Codes["j"], ref bits);
@@ -424,6 +553,34 @@ namespace ASC_RiscV_P {
                 if (IsInstruction("mv", curr, s)) {
 
                     WriteCode(MainClass.Codes["mv"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fmv.s.x", curr, s)) {
+                    WriteCode(MainClass.Codes["fmv.s.x"], ref bits);
+                    JumpToNextWord(ref curr, s);
+
+                    string reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    reg = GetWord(ref curr, s, true);
+                    WriteCode(reg[0] == 'f' ? "1" : "0", ref bits);
+                    WriteCode(MainClass.RegisterCodes[reg], ref bits);
+
+                    continue;
+                }
+                if (IsInstruction("fmv.s", curr, s)) {
+                    WriteCode(MainClass.Codes["fmv.s"], ref bits);
                     JumpToNextWord(ref curr, s);
 
                     string reg = GetWord(ref curr, s, true);
@@ -534,6 +691,24 @@ namespace ASC_RiscV_P {
                             localAddress += 64;
                         } while (word[word.Length - 1] == ',');
                         break;
+
+                    case ".float":
+                        word = "";
+                        do {
+                            word = GetWord(ref curr, s, true, false);
+                            WriteCode(Convert.ToSingle(word.Replace(",", "")), ref dataBits);
+                            localAddress += 32;
+                        } while (word[word.Length - 1] == ',');
+                        break;
+
+                    case ".LL":
+                        word = GetWord(ref curr, s, true, false);
+
+                        WriteCode(Convert.ToInt64(word.Replace(",", "")), ref dataBits);
+                        WriteCode((long)0, ref dataBits);
+                        localAddress += 128;
+
+                        break;
                 }
             }
             int textOffset = 32 + Vars.Count * 40 + MainClass.Codes["eof"].Length + dataBits.Count;
@@ -615,6 +790,13 @@ namespace ASC_RiscV_P {
 
             WriteCode(rep, ref bits);
         }
+        static void WriteCode(float code, ref Queue<bool> bits) {
+            string rep = Convert.ToString(BitConverter.ToInt32(BitConverter.GetBytes(code), 0), 2);
+            while (rep.Length != 32)
+                rep = '0' + rep;
+
+            WriteCode(rep, ref bits);
+        }
 
         static bool IsDataSectionStart(int curr, string s) => IsInstruction(".section .rodata", curr, s);
         static bool IsTextSectionStart(int curr, string s) => IsInstruction(".section .text", curr, s);
@@ -661,7 +843,7 @@ namespace ASC_RiscV_P {
             return label;
         }
 
-        static byte currLabel = 3;
+        static byte currLabel = 5;
         static byte currVar = 0;
 
         static byte GetLabelCode(string label) {

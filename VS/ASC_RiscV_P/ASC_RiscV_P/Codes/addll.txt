@@ -1,0 +1,65 @@
+﻿.section .rodata
+    A: .LL 4
+    B: .LL 6
+    C: .LL 17
+    D: .LL 25
+    E: .LL 28
+    r_long: .asciz "%ld "
+
+.section .text
+.global addll
+addll:
+    # a0 = list
+    # a1 = element
+    # LL structure
+    # Name       Offset       Size (bytes)
+    # data       0            2
+    # next       8            8
+    sd      a0, 8(a1)     # element->next = list
+    mv      a0, a1        # set a0 to return element instead of list
+    ret                   # return via return address register
+
+.global print_list
+print_list:         # print entire chain
+
+1:
+    mv s2, a0
+    ld a1, 0(a0)
+    la a0, r_long
+    call printf
+    mv a0, s2
+
+    ld a0, 8(a0)
+    beqz a0, 1f
+
+    j 1b
+1:
+    ret
+
+
+.global _start
+_start:
+
+    # A -> B
+
+    la a0, B
+    la a1, A
+    call addll
+
+    # C -> A -> B
+
+    la a1, C
+    call addll
+
+    # E -> C -> A -> B
+
+    la a1, E
+    call addll
+
+    # D -> E -> C -> A -> B
+    
+    la a1, D
+    call addll
+
+    call print_list
+    
