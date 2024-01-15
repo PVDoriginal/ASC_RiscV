@@ -1,13 +1,11 @@
 # Proiect ASC - C#
 ## Cum se foloseste
-- Se adauga un fisier **exemplu.txt** ce contine cod Risc-V in folderul 'Codes/' din interiorul proiectului.
-
+- Se alege sau se creaza un fisier **exemplu.txt** ce contine cod Risc-V in folderul 'Codes/' din interiorul proiectului.
 - Se modifica variabila **Code** din clasa **MainClass** cu numele fisierul ce va fi asamblat.
 ```Cs 
 public static string Code = "exemplu";
 ```
 - Se ruleaza proiectul in visual studio sau vscode cu extensia c# si se alege o optiune dintre *Assemble*, *Execute* sau *Both*.
-
 - **In folderul 'Codes/' au fost deja adaugate exemplele de programe din cerinta proiectului.**
 
 ## Detalii de functionare
