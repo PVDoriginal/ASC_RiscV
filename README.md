@@ -11,7 +11,7 @@ public static string Code = "exemplu";
 ## Detalii de functionare
 - In urma asamblarii, va fi creat un fisier binar in folderul 'Binaries/', avand acelasi nume ca fisierul text de la inceput.
 - In urma executarii va fi creat un fisier 'status.txt' ce contine valorile finale ale fiecarui registru.
-- Exista in interiorul proiectului un fisier 'Instructions' ce contine numele fiecarei instructiuni implementata si codificarea acesteia (al 3-lea parametrul este spatiul in biti alocat)
+- Exista in interiorul proiectului un fisier 'Instructions' ce contine numele fiecarei instructiuni implementata si codificarea acesteia (al 3-lea parametrul este spatiul in biti alocat parametrilor)
   - Se poate observa ca au fost definite instructiunile abstracte *label*, *var*, *eof*, pentru identificarea mai simpla a unui label, variabila sau a sfarsitului codului.
 
 ## Detalii despre binar
